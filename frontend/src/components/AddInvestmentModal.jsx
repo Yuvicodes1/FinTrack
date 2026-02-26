@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { auth } from "../firebase";
 import API from "../services/Api";
+import { useCurrency } from "../context/CurrencyContext";
 
 const AddInvestmentModal = ({ onClose, onSuccess }) => {
   const [symbol, setSymbol] = useState("");
@@ -9,6 +10,7 @@ const AddInvestmentModal = ({ onClose, onSuccess }) => {
   const [isCustom, setIsCustom] = useState(false);
   const [estSellPrice, setEstSellPrice] = useState("");
 
+  const { currencyMeta } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -93,7 +95,7 @@ const AddInvestmentModal = ({ onClose, onSuccess }) => {
 
         <input
           type="number"
-          placeholder="Buy Price"
+          placeholder={`Buy Price (${currencyMeta.symbol})`}
           value={buyPrice}
           min="0"
           onChange={(e) => setBuyPrice(e.target.value)}
@@ -117,7 +119,7 @@ const AddInvestmentModal = ({ onClose, onSuccess }) => {
         {isCustom && (
           <input
             type="number"
-            placeholder="Estimated Sell Price"
+            placeholder={`Estimated Sell Price (${currencyMeta.symbol})`}
             value={estSellPrice}
             min="0"
             onChange={(e) => setEstSellPrice(e.target.value)}

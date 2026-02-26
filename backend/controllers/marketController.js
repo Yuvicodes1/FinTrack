@@ -1,6 +1,7 @@
 const axios = require("axios");
 const asyncHandler = require("../middleware/asyncHandler");
 const { getFromCache, setCache, TTL } = require("../utils/cache");
+const { getAllRates } = require("../services/currencyService");
 
 const API_KEY = process.env.FINNHUB_API_KEY;
 
@@ -123,4 +124,13 @@ exports.getTopStocks = asyncHandler(async (req, res) => {
   console.log("Top stocks fetched and cached:", results.length, "symbols");
 
   res.status(200).json({ success: true, data: results });
+});
+
+
+// ======================================================
+// 💱 GET EXCHANGE RATES (for frontend conversion)
+// ======================================================
+exports.getRates = asyncHandler(async (req, res) => {
+  const rates = await getAllRates();
+  res.status(200).json({ success: true, rates });
 });

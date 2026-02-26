@@ -9,7 +9,6 @@ const { getConversionRate } = require("../services/currencyService");
 exports.createPortfolio = async (req, res) => {
   try {
     const { firebaseUID } = req.body;
-
     const user = await User.findOne({ firebaseUID });
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -17,7 +16,6 @@ exports.createPortfolio = async (req, res) => {
     if (!portfolio) {
       portfolio = await Portfolio.create({ user: user._id, stocks: [] });
     }
-
     res.status(200).json(portfolio);
   } catch (error) {
     console.error("Create Portfolio Error:", error);
@@ -28,6 +26,7 @@ exports.createPortfolio = async (req, res) => {
 
 // ===============================
 // Add stock
+// Converts buyPrice from user's display currency → USD before storing
 // ===============================
 exports.addStock = async (req, res) => {
   try {
@@ -39,10 +38,19 @@ exports.addStock = async (req, res) => {
     const portfolio = await Portfolio.findOne({ user: user._id });
     if (!portfolio) return res.status(404).json({ message: "Portfolio not found" });
 
+    let buyPriceUsd = buyPrice;
+
+    if (!isCustom) {
+      // ── Convert user-entered price back to USD for storage ──────────────
+      const userCurrency = user.preferredCurrency || "INR";
+      const conversionRate = await getConversionRate(userCurrency);
+      buyPriceUsd = parseFloat((buyPrice / conversionRate).toFixed(6));
+    }
+
     portfolio.stocks.push({
       symbol,
       quantity,
-      buyPrice,
+      buyPrice: buyPriceUsd,        // always stored in USD for live stocks
       estSellPrice: isCustom ? estSellPrice : null,
       isCustom: isCustom || false,
     });
@@ -57,7 +65,8 @@ exports.addStock = async (req, res) => {
 
 
 // ===============================
-// Get portfolio (with dynamic currency conversion)
+// Get portfolio
+// Returns all values in USD — frontend handles display conversion
 // ===============================
 exports.getPortfolio = async (req, res) => {
   try {
@@ -71,26 +80,19 @@ exports.getPortfolio = async (req, res) => {
       portfolio = await Portfolio.create({ user: user._id, stocks: [] });
     }
 
-    // ── Use the user's preferred currency, default to INR ─────────────────
-    const targetCurrency = user.preferredCurrency || "INR";
-    const conversionRate = await getConversionRate(targetCurrency);
-
-    let totalInvested = 0;
-    let totalCurrentValue = 0;
+    let totalInvestedUsd = 0;
+    let totalCurrentValueUsd = 0;
     const enrichedStocks = [];
 
     for (const stock of portfolio.stocks) {
 
-      // ── Custom assets: stored in user's currency, no conversion needed ───
+      // ── Custom assets: stored in user's own currency, return as-is ───────
       if (stock.isCustom) {
         const investedAmount = parseFloat((stock.quantity * stock.buyPrice).toFixed(2));
         const currentValue = parseFloat(
           (stock.quantity * (stock.estSellPrice || stock.buyPrice)).toFixed(2)
         );
         const profitLoss = parseFloat((currentValue - investedAmount).toFixed(2));
-
-        totalInvested += investedAmount;
-        totalCurrentValue += currentValue;
 
         enrichedStocks.push({
           symbol: stock.symbol,
@@ -103,49 +105,50 @@ exports.getPortfolio = async (req, res) => {
           isCustom: true,
           estSellPrice: stock.estSellPrice || null,
         });
+
+        // Custom assets are not included in USD totals since they're user-currency
         continue;
       }
 
-      // ── Live stock: fetch USD price, convert to target currency ───────────
+      // ── Live stock: buyPrice and currentPrice are both in USD ─────────────
       let currentPriceUsd = 0;
       try {
         currentPriceUsd = await getCurrentStockPrice(stock.symbol);
       } catch (err) {
         console.log("Live price fetch failed:", stock.symbol);
-        currentPriceUsd = stock.buyPrice / conversionRate;
+        currentPriceUsd = stock.buyPrice; // fallback to buy price
       }
 
-      const currentPrice = parseFloat((currentPriceUsd * conversionRate).toFixed(2));
+      const investedAmountUsd = parseFloat((stock.quantity * stock.buyPrice).toFixed(2));
+      const currentValueUsd = parseFloat((stock.quantity * currentPriceUsd).toFixed(2));
+      const profitLossUsd = parseFloat((currentValueUsd - investedAmountUsd).toFixed(2));
 
-      // buyPrice was entered by user already in their preferred currency
-      const investedAmount = parseFloat((stock.quantity * stock.buyPrice).toFixed(2));
-      const currentValue = parseFloat((stock.quantity * currentPrice).toFixed(2));
-      const profitLoss = parseFloat((currentValue - investedAmount).toFixed(2));
-
-      totalInvested += investedAmount;
-      totalCurrentValue += currentValue;
+      totalInvestedUsd += investedAmountUsd;
+      totalCurrentValueUsd += currentValueUsd;
 
       enrichedStocks.push({
         symbol: stock.symbol,
         quantity: stock.quantity,
-        buyPrice: stock.buyPrice,
-        currentPrice,
-        investedAmount,
-        currentValue,
-        profitLoss,
+        buyPrice: stock.buyPrice,         // USD
+        currentPrice: currentPriceUsd,    // USD
+        investedAmount: investedAmountUsd,
+        currentValue: currentValueUsd,
+        profitLoss: profitLossUsd,
         isCustom: false,
         estSellPrice: null,
       });
     }
 
+    // Return USD values + the user's preferred currency so frontend knows what to convert to
     res.status(200).json({
       stocks: enrichedStocks,
       summary: {
-        totalInvested: parseFloat(totalInvested.toFixed(2)),
-        totalCurrentValue: parseFloat(totalCurrentValue.toFixed(2)),
-        totalProfitLoss: parseFloat((totalCurrentValue - totalInvested).toFixed(2)),
+        totalInvested: parseFloat(totalInvestedUsd.toFixed(2)),
+        totalCurrentValue: parseFloat(totalCurrentValueUsd.toFixed(2)),
+        totalProfitLoss: parseFloat((totalCurrentValueUsd - totalInvestedUsd).toFixed(2)),
       },
-      currency: targetCurrency,
+      baseCurrency: "USD",
+      preferredCurrency: user.preferredCurrency || "INR",
     });
 
   } catch (error) {
@@ -157,6 +160,7 @@ exports.getPortfolio = async (req, res) => {
 
 // ===============================
 // Update stock
+// Converts buyPrice from display currency → USD before storing
 // ===============================
 exports.updateStock = async (req, res) => {
   try {
@@ -172,7 +176,18 @@ exports.updateStock = async (req, res) => {
     if (!stock) return res.status(404).json({ message: "Stock not found" });
 
     if (quantity !== undefined) stock.quantity = quantity;
-    if (buyPrice !== undefined) stock.buyPrice = buyPrice;
+
+    if (buyPrice !== undefined) {
+      if (!stock.isCustom) {
+        // Convert display currency → USD before storing
+        const userCurrency = user.preferredCurrency || "INR";
+        const conversionRate = await getConversionRate(userCurrency);
+        stock.buyPrice = parseFloat((buyPrice / conversionRate).toFixed(6));
+      } else {
+        stock.buyPrice = buyPrice;
+      }
+    }
+
     if (estSellPrice !== undefined) stock.estSellPrice = estSellPrice;
 
     await portfolio.save();
@@ -198,7 +213,6 @@ exports.removeStock = async (req, res) => {
     if (!portfolio) return res.status(404).json({ message: "Portfolio not found" });
 
     portfolio.stocks = portfolio.stocks.filter((s) => s.symbol !== symbol);
-
     await portfolio.save();
     res.status(200).json({ message: "Stock removed successfully" });
   } catch (error) {

@@ -7,17 +7,15 @@ import { useCurrency } from "../context/CurrencyContext";
 
 export default function Dashboard() {
   const { user, authLoading } = useAuth();
-  const { currency } = useCurrency();
+  const { format, currencyLoading } = useCurrency();
+
   const [portfolio, setPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!user) { setLoading(false); return; }
 
     const fetchPortfolio = async () => {
       try {
@@ -34,13 +32,7 @@ export default function Dashboard() {
     fetchPortfolio();
   }, [user, authLoading]);
 
-  const formatCurrency = (num) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: currency,
-    }).format(num || 0);
-
-  if (authLoading || loading) {
+  if (authLoading || loading || currencyLoading) {
     return (
       <AppLayout title="Dashboard">
         <div className="text-center mt-20 text-lg">Loading portfolio...</div>
@@ -71,31 +63,24 @@ export default function Dashboard() {
 
       {/* Summary Cards */}
       <div className="grid md:grid-cols-3 gap-6 mb-10">
-        <SummaryCard
-          title="Total Invested"
-          value={formatCurrency(summary.totalInvested)}
-        />
-        <SummaryCard
-          title="Current Value"
-          value={formatCurrency(summary.totalCurrentValue)}
-        />
+        <SummaryCard title="Total Invested"  value={format(summary.totalInvested)} />
+        <SummaryCard title="Current Value"   value={format(summary.totalCurrentValue)} />
         <SummaryCard
           title="Profit / Loss"
-          value={formatCurrency(summary.totalProfitLoss)}
+          value={format(summary.totalProfitLoss)}
           highlight
           positive={summary.totalProfitLoss >= 0}
         />
       </div>
 
       {/* Stock Table */}
-      <div
-        className="rounded-2xl overflow-hidden
+      <div className="rounded-2xl overflow-hidden
         bg-white dark:bg-darkCard
         border border-gray-200 dark:border-darkBorder
         shadow-md"
       >
         <table className="w-full text-left">
-          <thead className="bg-gray-100 dark:bg-darkBg">
+          <thead className="bg-gray-100 dark:bg-darkBg text-sm">
             <tr>
               <th className="p-4">Symbol</th>
               <th className="p-4">Qty</th>
@@ -106,20 +91,32 @@ export default function Dashboard() {
           </thead>
           <tbody>
             {portfolio.stocks.map((stock) => (
-              <tr
-                key={stock.symbol}
-                className="border-t border-gray-200 dark:border-darkBorder"
-              >
+              <tr key={stock.symbol} className="border-t border-gray-200 dark:border-darkBorder">
                 <td className="p-4 font-semibold">{stock.symbol}</td>
                 <td className="p-4">{stock.quantity}</td>
-                <td className="p-4">{formatCurrency(stock.buyPrice)}</td>
-                <td className="p-4">{formatCurrency(stock.currentPrice)}</td>
-                <td
-                  className={`p-4 font-semibold ${
-                    stock.profitLoss >= 0 ? "text-green-500" : "text-red-500"
-                  }`}
-                >
-                  {formatCurrency(stock.profitLoss)}
+                <td className="p-4">
+                  <span>{format(stock.buyPrice)}</span>
+                  {!stock.isCustom && (
+                    <span className="block text-xs text-gray-400 dark:text-gray-500">
+                      ${stock.buyPrice.toFixed(2)} USD
+                    </span>
+                  )}
+                </td>
+                <td className="p-4">
+                  <span>{format(stock.currentPrice)}</span>
+                  {!stock.isCustom && (
+                    <span className="block text-xs text-gray-400 dark:text-gray-500">
+                      ${stock.currentPrice.toFixed(2)} USD
+                    </span>
+                  )}
+                </td>
+                <td className={`p-4 font-semibold ${stock.profitLoss >= 0 ? "text-green-500" : "text-red-500"}`}>
+                  <span>{format(stock.profitLoss)}</span>
+                  {!stock.isCustom && (
+                    <span className="block text-xs font-normal text-gray-400 dark:text-gray-500">
+                      ${stock.profitLoss.toFixed(2)} USD
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}
@@ -135,17 +132,14 @@ export default function Dashboard() {
 
 function SummaryCard({ title, value, highlight, positive }) {
   return (
-    <div
-      className="p-6 rounded-2xl shadow-md
+    <div className="p-6 rounded-2xl shadow-md
       bg-white dark:bg-darkCard
       border border-gray-200 dark:border-darkBorder"
     >
       <h3 className="text-sm text-lightMuted dark:text-gray-400">{title}</h3>
-      <p
-        className={`text-2xl font-bold mt-2 ${
-          highlight ? (positive ? "text-green-500" : "text-red-500") : ""
-        }`}
-      >
+      <p className={`text-2xl font-bold mt-2 ${
+        highlight ? (positive ? "text-green-500" : "text-red-500") : ""
+      }`}>
         {value}
       </p>
     </div>

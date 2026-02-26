@@ -10,8 +10,10 @@ import {
   Legend,
 } from "recharts";
 import API from "../../services/Api";
+import { useCurrency } from "../../context/CurrencyContext";
 
 export default function PortfolioChart({ stocks }) {
+  const { convert, currency } = useCurrency();
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -42,7 +44,8 @@ export default function PortfolioChart({ stocks }) {
             if (!portfolioMap[day.date]) {
               portfolioMap[day.date] = { date: day.date, value: 0 };
             }
-            portfolioMap[day.date].value += day.close * stock.quantity;
+            // day.close is in USD from Yahoo Finance — convert to display currency
+          portfolioMap[day.date].value += convert(day.close * stock.quantity);
           });
         });
 
@@ -60,7 +63,7 @@ export default function PortfolioChart({ stocks }) {
     };
 
     fetchHistory();
-  }, [stocks]);
+  }, [stocks, currency]);
 
   return (
     <div
