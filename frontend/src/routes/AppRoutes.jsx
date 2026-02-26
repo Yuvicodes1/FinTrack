@@ -6,6 +6,7 @@ import Market from "../pages/Market";
 import StockDetails from "../pages/StockDetails";
 import Portfolio from "../pages/Portfolio";
 import Settings from "../pages/Settings";
+import ExpensePage from "../pages/ExpensePage";
 import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function AppRoutes() {
@@ -32,6 +33,11 @@ export default function AppRoutes() {
 
         <Route path="/portfolio" element={
           <ProtectedRoute><Portfolio /></ProtectedRoute>
+        } />
+
+        {/* Expenses */}
+        <Route path="/expenses" element={
+          <ProtectedRoute><ExpensePage /></ProtectedRoute>
         } />
 
         {/* Settings — now a real page instead of a placeholder */}

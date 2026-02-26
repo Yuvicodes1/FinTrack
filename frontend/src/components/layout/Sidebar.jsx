@@ -6,7 +6,7 @@ import { ThemeContext } from "../../context/ThemeContext";
 import {
   FaChartPie, FaWallet, FaSearch,
   FaCog, FaBars, FaTimes,
-  FaMoon, FaSun, FaSignOutAlt,
+  FaMoon, FaSun, FaSignOutAlt, FaMoneyBillWave,
 } from "react-icons/fa";
 
 const NAV_ITEMS = [
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { to: "/portfolio", icon: <FaWallet />,   label: "Portfolio" },
   { to: "/market",    icon: <FaSearch />,   label: "Market"    },
   { to: "/settings",  icon: <FaCog />,      label: "Settings"  },
+  { to: "/expenses",  icon: <FaMoneyBillWave />, label: "Expenses"  },
 ];
 
 export default function Sidebar() {
