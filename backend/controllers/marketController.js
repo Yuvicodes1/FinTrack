@@ -1,9 +1,8 @@
 const axios = require("axios");
 const asyncHandler = require("../middleware/asyncHandler");
-const { getFromCache, setCache } = require("../utils/cache");
+const { getFromCache, setCache, TTL } = require("../utils/cache");
 
 const API_KEY = process.env.FINNHUB_API_KEY;
-
 
 
 // ======================================================
@@ -18,22 +17,15 @@ exports.searchStock = asyncHandler(async (req, res) => {
     throw error;
   }
 
-  const response = await axios.get(
-    "https://finnhub.io/api/v1/search",
-    {
-      params: {
-        q: symbol,
-        token: API_KEY
-      }
-    }
-  );
+  const response = await axios.get("https://finnhub.io/api/v1/search", {
+    params: { q: symbol, token: API_KEY },
+  });
 
   res.status(200).json({
     success: true,
-    data: response.data.result
+    data: response.data.result,
   });
 });
-
 
 
 // ======================================================
@@ -48,32 +40,23 @@ exports.getHistoricalData = asyncHandler(async (req, res) => {
     throw error;
   }
 
-  // 🔹 Map frontend range → Yahoo range
   let yahooRange = "1mo";
   if (range === "6M") yahooRange = "6mo";
   if (range === "1Y") yahooRange = "1y";
 
   const cacheKey = `history_${symbol}_${yahooRange}`;
 
-  // ✅ Check cache first
   const cached = getFromCache(cacheKey);
   if (cached) {
     console.log("Yahoo history cache hit:", symbol);
-    return res.status(200).json({
-      success: true,
-      data: cached
-    });
+    return res.status(200).json({ success: true, data: cached });
   }
 
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=${yahooRange}&interval=1d`;
-
   const response = await axios.get(url);
 
   if (!response.data.chart || !response.data.chart.result) {
-    return res.status(200).json({
-      success: true,
-      data: []
-    });
+    return res.status(200).json({ success: true, data: [] });
   }
 
   const result = response.data.chart.result[0];
@@ -82,54 +65,62 @@ exports.getHistoricalData = asyncHandler(async (req, res) => {
 
   const formattedData = timestamps.map((time, index) => ({
     date: new Date(time * 1000).toISOString().split("T")[0],
-    close: closes[index]
+    close: closes[index],
   }));
 
-  // ✅ Save to cache
-  setCache(cacheKey, formattedData);
+  setCache(cacheKey, formattedData, TTL.HISTORY);
 
-  res.status(200).json({
-    success: true,
-    data: formattedData
-  });
+  res.status(200).json({ success: true, data: formattedData });
 });
 
 
-
 // ======================================================
-// 📊 GET TOP STOCKS (Finnhub Quotes)
+// 📊 GET TOP STOCKS — cached as a single batch
 // ======================================================
 exports.getTopStocks = asyncHandler(async (req, res) => {
+  const CACHE_KEY = "top_stocks_batch";
+
+  // ── Return cached batch if still fresh ──────────────────────────────────
+  const cached = getFromCache(CACHE_KEY);
+  if (cached) {
+    console.log("Top stocks cache hit");
+    return res.status(200).json({ success: true, data: cached });
+  }
+
   const symbols = [
-    "AAPL","MSFT","GOOGL","AMZN","TSLA",
-    "NVDA","META","NFLX","AMD","INTC",
-    "ORCL","IBM","ADBE","CRM","PYPL",
-    "UBER","SHOP","SQ","BABA",
-    "NKE","DIS","KO","PEP","WMT",
-    "COST","HD","MCD",
-    "PFE","JNJ","MRK",
-    "XOM","BA","CAT",
-    "PLTR","SNOW",
-    "SPOT","ZM",
-    "PANW","CRWD","DDOG",
-    "ASML","QCOM","AVGO"
+    "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
+    "NVDA", "META", "NFLX", "AMD", "INTC",
+    "ORCL", "IBM", "ADBE", "CRM", "PYPL",
+    "UBER", "SHOP", "SQ", "BABA",
+    "NKE", "DIS", "KO", "PEP", "WMT",
+    "COST", "HD", "MCD",
+    "PFE", "JNJ", "MRK",
+    "XOM", "BA", "CAT",
+    "PLTR", "SNOW",
+    "SPOT", "ZM",
+    "PANW", "CRWD", "DDOG",
+    "ASML", "QCOM", "AVGO",
   ];
 
-  const requests = symbols.map(symbol =>
-    axios.get("https://finnhub.io/api/v1/quote", {
-      params: { symbol, token: API_KEY }
-    }).then(response => ({
-      symbol,
-      currentPrice: response.data.c,
-      change: response.data.d,
-      percentChange: response.data.dp
-    })).catch(() => null) // ignore failed symbols
+  const requests = symbols.map((symbol) =>
+    axios
+      .get("https://finnhub.io/api/v1/quote", {
+        params: { symbol, token: API_KEY },
+      })
+      .then((response) => ({
+        symbol,
+        currentPrice: response.data.c,
+        change: response.data.d,
+        percentChange: response.data.dp,
+      }))
+      .catch(() => null)
   );
 
   const results = (await Promise.all(requests)).filter(Boolean);
 
-  res.status(200).json({
-    success: true,
-    data: results
-  });
+  // ── Cache the full batch result ──────────────────────────────────────────
+  setCache(CACHE_KEY, results, TTL.TOP_STOCKS);
+  console.log("Top stocks fetched and cached:", results.length, "symbols");
+
+  res.status(200).json({ success: true, data: results });
 });
