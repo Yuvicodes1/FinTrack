@@ -95,6 +95,7 @@ exports.getPortfolio = async (req, res) => {
         const profitLoss = parseFloat((currentValue - investedAmount).toFixed(2));
 
         enrichedStocks.push({
+          stockId: stock._id,
           symbol: stock.symbol,
           quantity: stock.quantity,
           buyPrice: stock.buyPrice,
@@ -127,6 +128,7 @@ exports.getPortfolio = async (req, res) => {
       totalCurrentValueUsd += currentValueUsd;
 
       enrichedStocks.push({
+        stockId: stock._id,
         symbol: stock.symbol,
         quantity: stock.quantity,
         buyPrice: stock.buyPrice,         // USD
@@ -159,12 +161,11 @@ exports.getPortfolio = async (req, res) => {
 
 
 // ===============================
-// Update stock
-// Converts buyPrice from display currency → USD before storing
+// Update stock — lookup by stockId (_id) not symbol
 // ===============================
 exports.updateStock = async (req, res) => {
   try {
-    const { firebaseUID, symbol, quantity, buyPrice, estSellPrice } = req.body;
+    const { firebaseUID, stockId, quantity, buyPrice, estSellPrice } = req.body;
 
     const user = await User.findOne({ firebaseUID });
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -172,14 +173,14 @@ exports.updateStock = async (req, res) => {
     const portfolio = await Portfolio.findOne({ user: user._id });
     if (!portfolio) return res.status(404).json({ message: "Portfolio not found" });
 
-    const stock = portfolio.stocks.find((s) => s.symbol === symbol);
+    // Find by _id — safe even if same symbol appears twice
+    const stock = portfolio.stocks.id(stockId);
     if (!stock) return res.status(404).json({ message: "Stock not found" });
 
     if (quantity !== undefined) stock.quantity = quantity;
 
     if (buyPrice !== undefined) {
       if (!stock.isCustom) {
-        // Convert display currency → USD before storing
         const userCurrency = user.preferredCurrency || "INR";
         const conversionRate = await getConversionRate(userCurrency);
         stock.buyPrice = parseFloat((buyPrice / conversionRate).toFixed(6));
@@ -200,11 +201,11 @@ exports.updateStock = async (req, res) => {
 
 
 // ===============================
-// Remove stock
+// Remove stock — lookup by stockId (_id) not symbol
 // ===============================
 exports.removeStock = async (req, res) => {
   try {
-    const { firebaseUID, symbol } = req.body;
+    const { firebaseUID, stockId } = req.body;
 
     const user = await User.findOne({ firebaseUID });
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -212,7 +213,9 @@ exports.removeStock = async (req, res) => {
     const portfolio = await Portfolio.findOne({ user: user._id });
     if (!portfolio) return res.status(404).json({ message: "Portfolio not found" });
 
-    portfolio.stocks = portfolio.stocks.filter((s) => s.symbol !== symbol);
+    portfolio.stocks = portfolio.stocks.filter(
+      (s) => s._id.toString() !== stockId
+    );
     await portfolio.save();
     res.status(200).json({ message: "Stock removed successfully" });
   } catch (error) {

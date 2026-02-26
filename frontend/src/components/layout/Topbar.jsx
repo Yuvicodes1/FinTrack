@@ -5,16 +5,33 @@ import { signOut } from "firebase/auth";
 import { auth } from "../../firebase";
 import { useNavigate } from "react-router-dom";
 import { useCurrency, CURRENCIES } from "../../context/CurrencyContext";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Topbar({ title }) {
   const { darkMode, setDarkMode } = useContext(ThemeContext);
   const { currency, currencyMeta, setCurrency } = useCurrency();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // ── Close dropdown on outside click ──────────────────────────────────────
+  // ── Derive initials from displayName or email ─────────────────────────────
+  const getInitials = () => {
+    if (!user) return "?";
+    if (user.displayName) {
+      return user.displayName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    // Fallback to first letter of email
+    return user.email?.[0]?.toUpperCase() ?? "?";
+  };
+
+  // ── Close currency dropdown on outside click ──────────────────────────────
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -29,7 +46,7 @@ export default function Topbar({ title }) {
     try {
       await signOut(auth);
       localStorage.removeItem("userId");
-      navigate("/login");
+      navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -73,7 +90,6 @@ export default function Topbar({ title }) {
             />
           </button>
 
-          {/* Dropdown menu */}
           {dropdownOpen && (
             <div
               className="absolute right-0 mt-2 w-48 rounded-xl shadow-lg
@@ -110,14 +126,16 @@ export default function Topbar({ title }) {
           {darkMode ? <FaSun /> : <FaMoon />}
         </button>
 
-        {/* User Avatar */}
+        {/* ── User Avatar with real initials ────────────────────────────── */}
         <div
           className="w-9 h-9 rounded-full
           bg-lightAccent dark:bg-darkAccent
           flex items-center justify-center
-          text-white dark:text-black font-bold"
+          text-white dark:text-black text-sm font-bold
+          select-none"
+          title={user?.displayName || user?.email || ""}
         >
-          U
+          {getInitials()}
         </div>
 
         {/* Logout */}

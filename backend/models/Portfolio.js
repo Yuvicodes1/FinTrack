@@ -1,56 +1,53 @@
 const mongoose = require("mongoose");
 
 // ===========================================
-// 📦 Stock Schema (Supports Custom Assets)
+// 📦 Stock Schema
+// _id: true (default) so each stock gets a
+// unique ID — avoids symbol collision bugs
+// when a user holds the same ticker twice
 // ===========================================
 const stockSchema = new mongoose.Schema({
   symbol: {
     type: String,
-    required: true
+    required: true,
   },
-
   quantity: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
   },
-
+  // Stored in USD for live stocks, user currency for custom assets
   buyPrice: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
   },
-
-  // ✅ Optional estimated sell price (for manual/custom assets)
   estSellPrice: {
     type: Number,
     default: null,
-    min: 0
+    min: 0,
   },
-
-  // ✅ Flag to identify manually added assets
   isCustom: {
     type: Boolean,
-    default: false
-  }
-
-}, { _id: false });
+    default: false,
+  },
+});  // _id: true is the Mongoose default — intentionally left enabled
 
 
 // ===========================================
 // 📊 Portfolio Schema
 // ===========================================
-const portfolioSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-    unique: true
+const portfolioSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
+    },
+    stocks: [stockSchema],
   },
-
-  stocks: [stockSchema]
-
-}, { timestamps: true });
-
+  { timestamps: true }
+);
 
 module.exports = mongoose.model("Portfolio", portfolioSchema);

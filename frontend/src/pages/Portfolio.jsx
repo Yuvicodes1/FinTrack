@@ -36,10 +36,10 @@ const Portfolio = () => {
     }
   };
 
-  const handleDelete = async (symbol) => {
+  const handleDelete = async (stockId) => {
     try {
       await API.delete("/portfolio/remove-stock", {
-        data: { firebaseUID: user.uid, symbol },
+        data: { firebaseUID: user.uid, stockId },
       });
       fetchPortfolio();
     } catch (err) {
@@ -50,9 +50,9 @@ const Portfolio = () => {
   const handleEditSave = async ({ quantity, buyPrice, estSellPrice }) => {
     await API.put("/portfolio/update-stock", {
       firebaseUID: user.uid,
-      symbol: editingStock.symbol,
+      stockId: editingStock.stockId,   // use _id, not symbol
       quantity,
-      buyPrice,       // backend will convert from display currency → USD
+      buyPrice,
       estSellPrice,
     });
     fetchPortfolio();
@@ -139,7 +139,7 @@ const Portfolio = () => {
             )}
             <div className="flex gap-6 mt-5 text-sm font-medium">
               <button onClick={() => setEditingStock(stock)} className="text-blue-500 hover:underline">Edit</button>
-              <button onClick={() => handleDelete(stock.symbol)} className="text-red-500 hover:underline">Delete</button>
+              <button onClick={() => handleDelete(stock.stockId)} className="text-red-500 hover:underline">Delete</button>
             </div>
           </div>
         ))}
