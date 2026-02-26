@@ -9,48 +9,53 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import API from "../../services/Api";
 
 export default function PortfolioChart({ stocks }) {
   const [chartData, setChartData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!stocks || stocks.length === 0) return;
 
     const fetchHistory = async () => {
       try {
-        let portfolioMap = {};
+        setLoading(true);
+        setError("");
 
-        for (const stock of stocks) {
-          const res = await fetch(
-            `http://localhost:5000/api/market/history?symbol=${stock.symbol}`
-          );
+        // ─── Fetch all stock histories in parallel ────────────────────────
+        const responses = await Promise.all(
+          stocks.map((stock) =>
+            API.get(`/market/history?symbol=${stock.symbol}`)
+          )
+        );
 
-          const json = await res.json();
-          const history = json.data;
+        // ─── Merge all histories into a single date-keyed map ─────────────
+        const portfolioMap = {};
+
+        responses.forEach((res, i) => {
+          const stock = stocks[i];
+          const history = res.data?.data ?? [];
 
           history.forEach((day) => {
-            const date = day.date;
-            const value = day.close * stock.quantity;
-
-            if (!portfolioMap[date]) {
-              portfolioMap[date] = {
-                date,
-                value: 0,
-              };
+            if (!portfolioMap[day.date]) {
+              portfolioMap[day.date] = { date: day.date, value: 0 };
             }
-
-            portfolioMap[date].value += value;
+            portfolioMap[day.date].value += day.close * stock.quantity;
           });
-        }
+        });
 
         const mergedData = Object.values(portfolioMap).sort(
           (a, b) => new Date(a.date) - new Date(b.date)
         );
 
         setChartData(mergedData);
-
-      } catch (error) {
-        console.error("History fetch error:", error);
+      } catch (err) {
+        console.error("History fetch error:", err);
+        setError("Failed to load chart data.");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -64,27 +69,39 @@ export default function PortfolioChart({ stocks }) {
       border border-gray-200 dark:border-darkBorder
       mt-10"
     >
-      <h2 className="text-lg font-semibold mb-6">
-        Portfolio Performance
-      </h2>
+      <h2 className="text-lg font-semibold mb-6">Portfolio Performance</h2>
 
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-
-          <Line
-            type="monotone"
-            dataKey="value"
-            name="Portfolio Value"
-            stroke="#2DD4BF"
-            strokeWidth={3}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      {loading ? (
+        <div className="flex items-center justify-center h-[300px] text-gray-400">
+          Loading chart...
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center h-[300px] text-red-500">
+          {error}
+        </div>
+      ) : chartData.length === 0 ? (
+        <div className="flex items-center justify-center h-[300px] text-gray-400">
+          No chart data available.
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="value"
+              name="Portfolio Value"
+              stroke="#2DD4BF"
+              strokeWidth={3}
+              dot={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }
