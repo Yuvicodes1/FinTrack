@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { ThemeContext } from "../context/ThemeContext";
 import AppLayout from "../components/layout/AppLayout";
 import API from "../services/Api";
 import { useAuth } from "../context/AuthContext";
@@ -24,6 +25,7 @@ export default function Market() {
   const { user } = useAuth();
   const { format } = useCurrency();
   const navigate = useNavigate();
+  const { darkMode } = useContext(ThemeContext);
 
   const [tab, setTab]           = useState("market");   // "market" | "watchlist"
   const [stocks, setStocks]     = useState([]);
@@ -209,6 +211,7 @@ export default function Market() {
               onToggleWatchlist={toggleWatchlist}
               onQuickAdd={() => setQuickAdd(stock)}
               onNavigate={() => navigate(`/stock/${stock.symbol}`)}
+              darkMode={darkMode}
             />
             ))}
           </div>
@@ -231,7 +234,7 @@ export default function Market() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Stock Card component
 // ─────────────────────────────────────────────────────────────────────────────
-function StockCard({ stock, isHovered, inWatchlist, format, onHover, onLeave, onToggleWatchlist, onQuickAdd, onNavigate }) {
+function StockCard({ stock, isHovered, inWatchlist, format, onHover, onLeave, onToggleWatchlist, onQuickAdd, onNavigate, darkMode = false }) {
   const isPositive = stock.percentChange >= 0;
 
   return (
@@ -243,23 +246,23 @@ function StockCard({ stock, isHovered, inWatchlist, format, onHover, onLeave, on
       transition-all duration-300 overflow-hidden
       ${isHovered
         ? "shadow-2xl -translate-y-1.5 border-lightAccent/50 dark:border-darkAccent/50"
-        : "shadow-sm border-gray-200 dark:border-darkBorder"
+        : "shadow-sm border-gray-200 dark:border-darkBorder hover:border-lightAccent/20 dark:hover:border-darkAccent/20"
       }`}
-      style={isHovered ? {
-        background: isPositive
-          ? "linear-gradient(135deg, #fff9ee 0%, #fff3d6 100%)"
-          : "linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%)"
-      } : {
-        background: "var(--card-bg, white)"
+      style={{
+        background: isHovered
+          ? darkMode
+            ? isPositive
+              ? "linear-gradient(135deg, #0F1A14 0%, #0d2a1a 100%)"
+              : "linear-gradient(135deg, #1a0f0f 0%, #2a0d0d 100%)"
+            : isPositive
+              ? "linear-gradient(135deg, #fff9ee 0%, #fff3d6 100%)"
+              : "linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%)"
+          : darkMode
+            ? "#0F1A14"
+            : "#ffffff"
       }}
     >
-      {/* Dark mode gradient overlay via pseudo — handled with Tailwind below */}
-      <div className={`absolute inset-0 rounded-2xl transition-opacity duration-300 pointer-events-none
-        ${isHovered
-          ? "opacity-100 dark:bg-gradient-to-br dark:from-darkAccent/10 dark:to-darkCard"
-          : "opacity-0"
-        }`}
-      />
+
 
       {/* Header row */}
       <div className="relative flex justify-between items-start mb-3">

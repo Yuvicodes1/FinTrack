@@ -6,7 +6,8 @@ const CurvedLoop = ({
   className,
   curveAmount = 400,
   direction = 'left',
-  interactive = true
+  interactive = true,
+  textFill = '#ffffff',
 }) => {
   const text = useMemo(() => {
     const hasTrailing = /\s|\u00A0$/.test(marqueeText);
@@ -106,7 +107,7 @@ const CurvedLoop = ({
       onPointerLeave={endDrag}
     >
       <svg
-        className={`select-none w-full overflow-visible block aspect-[100/12] font-bold uppercase leading-none ${className ?? ''}`}
+        className="select-none w-full overflow-visible block aspect-[100/12] font-bold uppercase leading-none"
         viewBox="0 0 1440 120"
       >
         <text ref={measureRef} xmlSpace="preserve" style={{ visibility: 'hidden', opacity: 0, pointerEvents: 'none' }}>
@@ -116,7 +117,11 @@ const CurvedLoop = ({
           <path ref={pathRef} id={pathId} d={pathD} fill="none" stroke="transparent" />
         </defs>
         {ready && (
-          <text xmlSpace="preserve">
+          <text
+            xmlSpace="preserve"
+            className={className ?? ''}
+            style={{ fill: textFill }}
+          >
             <textPath ref={textPathRef} href={`#${pathId}`} startOffset={offset + 'px'} xmlSpace="preserve">
               {totalText}
             </textPath>

@@ -148,8 +148,14 @@ export default function Landing() {
         <h2 className={`font-display text-5xl md:text-7xl font-black max-w-4xl leading-[1.05] mb-6
           reveal ${heroVisible ? "reveal-visible anim-fade-up anim-delay-1" : "reveal-hidden"}`}>
           Invest Smarter.{" "}
-          <span style={{ backgroundImage: "linear-gradient(135deg, #DDA448 0%, #480355 100%)",
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+          <span style={{
+            backgroundImage: darkMode
+              ? "linear-gradient(135deg, #2DD4BF 0%, #34d399 60%, #a3e635 100%)"
+              : "linear-gradient(135deg, #DDA448 0%, #8B1874 60%, #480355 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}>
             Live Better.
           </span>
         </h2>
@@ -187,15 +193,21 @@ export default function Landing() {
       {/* ── CURVED LOOP MARQUEE ──────────────────────────────────────────── */}
       <div className="relative z-10 -mt-8 mb-4 overflow-hidden"
         style={{ background: darkMode
-          ? "linear-gradient(135deg, #DDA448 0%, #480355 100%)"
-          : "linear-gradient(135deg, #480355 0%, #DDA448 100%)" }}>
+          ? "linear-gradient(135deg, #071108 0%, #0F1A14 40%, #1C2A23 100%)"
+          : "linear-gradient(135deg, #480355 0%, #8B1874 50%, #DDA448 100%)" }}>
+        {/* Subtle border lines to frame the strip */}
+        <div className="absolute inset-x-0 top-0 h-px"
+          style={{ background: darkMode ? "#2DD4BF40" : "#ffffff30" }} />
+        <div className="absolute inset-x-0 bottom-0 h-px"
+          style={{ background: darkMode ? "#2DD4BF40" : "#ffffff30" }} />
         <CurvedLoop
           marqueeText="Track Wealth ✦ Beat the Market ✦ Live Your Dream ✦ Own the Chart ✦ Stay Invested ✦"
           speed={1.5}
           curveAmount={180}
           direction="left"
           interactive
-          className="text-[4.5rem] fill-white opacity-90"
+          textFill={darkMode ? "#2DD4BF" : "#ffffff"}
+          className="text-[4.5rem]"
         />
       </div>
 

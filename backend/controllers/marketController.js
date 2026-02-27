@@ -89,39 +89,108 @@ exports.getTopStocks = asyncHandler(async (req, res) => {
   }
 
   const symbols = [
+    // ── Mega-cap Tech ──────────────────────────────────────────────────────
     "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
     "NVDA", "META", "NFLX", "AMD", "INTC",
     "ORCL", "IBM", "ADBE", "CRM", "PYPL",
-    "UBER", "SHOP", "SQ", "BABA",
-    "NKE", "DIS", "KO", "PEP", "WMT",
-    "COST", "HD", "MCD",
-    "PFE", "JNJ", "MRK",
-    "XOM", "BA", "CAT",
-    "PLTR", "SNOW",
-    "SPOT", "ZM",
-    "PANW", "CRWD", "DDOG",
-    "ASML", "QCOM", "AVGO",
+    "QCOM", "AVGO", "ASML", "TXN", "MU",
+
+    // ── Consumer & Retail ──────────────────────────────────────────────────
+    "WMT", "COST", "TGT", "HD", "LOW",
+    "MCD", "SBUX", "YUM", "CMG", "NKE",
+    "LULU", "BURL", "ROST", "TJX",
+
+    // ── Social & Internet ──────────────────────────────────────────────────
+    "SNAP", "PINS", "RDDT", "LYFT", "UBER",
+    "DASH", "ABNB", "BKNG", "EXPE",
+
+    // ── Streaming & Entertainment ──────────────────────────────────────────
+    "DIS", "PARA", "WBD", "SPOT", "RBLX",
+    "EA", "TTWO", "ATVI",
+
+    // ── Fintech & Payments ─────────────────────────────────────────────────
+    "V", "MA", "AXP", "GS", "JPM",
+    "BAC", "WFC", "MS", "C", "SQ",
+    "COIN", "HOOD",
+
+    // ── Cloud & SaaS ───────────────────────────────────────────────────────
+    "SNOW", "PLTR", "ZS", "NET", "DDOG",
+    "CRWD", "PANW", "OKTA", "MDB", "ZM",
+    "TEAM", "SHOP", "HCP",
+
+    // ── Healthcare & Pharma ────────────────────────────────────────────────
+    "JNJ", "PFE", "MRK", "ABBV", "LLY",
+    "BMY", "AMGN", "GILD", "BIIB", "REGN",
+    "MDT", "ABT", "TMO",
+
+    // ── Energy ────────────────────────────────────────────────────────────
+    "XOM", "CVX", "COP", "SLB", "EOG",
+    "OXY", "PSX", "VLO",
+
+    // ── Consumer Staples & Food ────────────────────────────────────────────
+    "KO", "PEP", "PG", "CL", "KHC",
+    "GIS", "K", "HSY", "MDLZ",
+
+    // ── Industrials & Aerospace ────────────────────────────────────────────
+    "BA", "CAT", "GE", "HON", "LMT",
+    "RTX", "NOC", "DE", "MMM",
+
+    // ── Semiconductors ────────────────────────────────────────────────────
+    "TSM", "AMAT", "LRCX", "KLAC", "MRVL",
+    "SWKS", "MPWR", "ON",
+
+    // ── Telecom ────────────────────────────────────────────────────────────
+    "T", "VZ", "TMUS",
+
+    // ── Autos & EV ─────────────────────────────────────────────────────────
+    "F", "GM", "RIVN", "LCID", "NIO",
+
+    // ── Real Estate & Infrastructure ───────────────────────────────────────
+    "AMT", "PLD", "EQIX", "CCI",
+
+    // ── ETFs (tracked like stocks) ─────────────────────────────────────────
+    "SPY", "QQQ", "IWM", "DIA", "GLD",
   ];
 
-  const requests = symbols.map((symbol) =>
-    axios
-      .get("https://finnhub.io/api/v1/quote", {
-        params: { symbol, token: API_KEY },
-      })
-      .then((response) => ({
-        symbol,
-        currentPrice: response.data.c,
-        change: response.data.d,
-        percentChange: response.data.dp,
-      }))
-      .catch(() => null)
-  );
+  // ── Batch requests to avoid Finnhub rate limits (30 req/s free tier) ─────
+  const BATCH_SIZE = 25;
+  const BATCH_DELAY_MS = 1200; // 1.2s between batches stays well under limit
 
-  const results = (await Promise.all(requests)).filter(Boolean);
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  let results = [];
+  for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
+    const batch = symbols.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map((symbol) =>
+        axios
+          .get("https://finnhub.io/api/v1/quote", {
+            params: { symbol, token: API_KEY },
+          })
+          .then((response) => {
+            // Skip symbols with no data (price = 0 means Finnhub doesn't carry it)
+            if (!response.data.c) return null;
+            return {
+              symbol,
+              currentPrice: response.data.c,
+              change: response.data.d,
+              percentChange: response.data.dp,
+              open: response.data.o,
+              high: response.data.h,
+              low: response.data.l,
+              prevClose: response.data.pc,
+            };
+          })
+          .catch(() => null)
+      )
+    );
+    results = results.concat(batchResults.filter(Boolean));
+    if (i + BATCH_SIZE < symbols.length) await sleep(BATCH_DELAY_MS);
+  }
 
   // ── Cache the full batch result ──────────────────────────────────────────
   setCache(CACHE_KEY, results, TTL.TOP_STOCKS);
-  console.log("Top stocks fetched and cached:", results.length, "symbols");
+  console.log(`Top stocks fetched and cached: ${results.length}/${symbols.length} symbols`);
 
   res.status(200).json({ success: true, data: results });
 });

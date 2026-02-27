@@ -53,3 +53,5 @@ So next time you can just run: ```git push```
 No need to type origin main again.
 
 ### install a dependency : ```npm install axios/<name>```
+
+npm install firebase admin

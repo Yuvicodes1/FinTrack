@@ -1,7 +1,7 @@
 const cacheStore = {};
 
 const DEFAULT_TTL = 60 * 1000;       // 60 seconds  — individual stock prices
-const TOP_STOCKS_TTL = 5 * 60 * 1000; // 5 minutes   — full batch of 42 symbols
+const TOP_STOCKS_TTL = 15 * 60 * 1000; // 15 minutes  — full batch of 140 symbols
 
 /**
  * Retrieve a value from cache. Returns null if missing or expired.
