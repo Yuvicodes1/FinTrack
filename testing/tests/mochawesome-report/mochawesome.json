@@ -1,0 +1,326 @@
+{
+  "stats": {
+    "suites": 1,
+    "tests": 10,
+    "passes": 6,
+    "pending": 0,
+    "failures": 4,
+    "start": "2026-03-26T20:07:17.302Z",
+    "end": "2026-03-26T20:08:03.459Z",
+    "duration": 46157,
+    "testsRegistered": 10,
+    "passPercent": 60,
+    "pendingPercent": 0,
+    "other": 0,
+    "hasOther": false,
+    "skipped": 0,
+    "hasSkipped": false
+  },
+  "results": [
+    {
+      "uuid": "4aea542f-0307-4f7b-b922-652c75329408",
+      "title": "",
+      "fullFile": "E:\\Work\\Stock Monitor\\Stock-monitor\\testing\\tests\\test.spec.js",
+      "file": "\\test.spec.js",
+      "beforeHooks": [],
+      "afterHooks": [],
+      "tests": [],
+      "suites": [
+        {
+          "uuid": "ef075136-5503-4be8-b23f-4edc4ed451fc",
+          "title": "Stock Monitor - Full E2E Flow",
+          "fullFile": "E:\\Work\\Stock Monitor\\Stock-monitor\\testing\\tests\\test.spec.js",
+          "file": "\\test.spec.js",
+          "beforeHooks": [
+            {
+              "title": "\"before all\" hook in \"Stock Monitor - Full E2E Flow\"",
+              "fullTitle": "Stock Monitor - Full E2E Flow \"before all\" hook in \"Stock Monitor - Full E2E Flow\"",
+              "timedOut": false,
+              "duration": 895,
+              "state": null,
+              "speed": null,
+              "pass": false,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "driver = await new Builder().forBrowser(\"chrome\").build();",
+              "err": {},
+              "uuid": "75530425-87bd-4635-ad6f-fbe4528726a2",
+              "parentUUID": "ef075136-5503-4be8-b23f-4edc4ed451fc",
+              "isHook": true,
+              "skipped": false
+            }
+          ],
+          "afterHooks": [
+            {
+              "title": "\"after all\" hook in \"Stock Monitor - Full E2E Flow\"",
+              "fullTitle": "Stock Monitor - Full E2E Flow \"after all\" hook in \"Stock Monitor - Full E2E Flow\"",
+              "timedOut": false,
+              "duration": 80,
+              "state": null,
+              "speed": null,
+              "pass": false,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "if (driver) await driver.quit();",
+              "err": {},
+              "uuid": "bb316276-d79b-4dd2-9f4b-b4fe5e7e2b72",
+              "parentUUID": "ef075136-5503-4be8-b23f-4edc4ed451fc",
+              "isHook": true,
+              "skipped": false
+            }
+          ],
+          "tests": [
+            {
+              "title": "Should load landing page correctly",
+              "fullTitle": "Stock Monitor - Full E2E Flow Should load landing page correctly",
+              "timedOut": false,
+              "duration": 836,
+              "state": "passed",
+              "speed": "slow",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "await driver.get(BASE_URL);\nconst title = await driver.getTitle();\nassert(title.length > 0);\nconst body = await driver.getPageSource();\nassert(body.toLowerCase().includes(\"login\") || body.length > 0);",
+              "err": {},
+              "uuid": "824080e7-ba4a-4a79-acb8-943cabea9f11",
+              "parentUUID": "ef075136-5503-4be8-b23f-4edc4ed451fc",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "Should navigate to login page",
+              "fullTitle": "Stock Monitor - Full E2E Flow Should navigate to login page",
+              "timedOut": false,
+              "duration": 348,
+              "state": "passed",
+              "speed": "slow",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "await driver.get(BASE_URL);\nawait clickWhenReady(\n  By.xpath(\"//button[contains(text(),'Login')]\")\n);\nawait driver.wait(until.urlContains(\"login\"), 5000);\nconst url = await driver.getCurrentUrl();\nassert(url.includes(\"login\"));",
+              "err": {},
+              "uuid": "d5557f74-a44c-4ccd-aeba-28891afd2f3f",
+              "parentUUID": "ef075136-5503-4be8-b23f-4edc4ed451fc",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "Should simulate login and load feature page",
+              "fullTitle": "Stock Monitor - Full E2E Flow Should simulate login and load feature page",
+              "timedOut": false,
+              "duration": 329,
+              "state": "passed",
+              "speed": "slow",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "await mockLogin();\nconst page = await driver.getPageSource();\nassert(\n  page.toLowerCase().includes(\"portfolio\") ||\n  page.toLowerCase().includes(\"expense\")\n);",
+              "err": {},
+              "uuid": "b54a765d-2c4f-463a-acee-dbebcbd2c8c1",
+              "parentUUID": "ef075136-5503-4be8-b23f-4edc4ed451fc",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "Should open Investment Dashboard",
+              "fullTitle": "Stock Monitor - Full E2E Flow Should open Investment Dashboard",
+              "timedOut": false,
+              "duration": 10371,
+              "state": "failed",
+              "speed": null,
+              "pass": false,
+              "fail": true,
+              "pending": false,
+              "context": null,
+              "code": "await mockLogin();\nawait clickWhenReady(\n  By.xpath(\"//*[contains(text(),'Portfolio') or contains(text(),'Investment')]\")\n);\nawait driver.wait(until.urlContains(\"dashboard\"), 5000);\nconst url = await driver.getCurrentUrl();\nassert(url.includes(\"dashboard\"));",
+              "err": {
+                "message": "TimeoutError: Waiting until element is visible\nWait timed out after 10079ms",
+                "estack": "TimeoutError: Waiting until element is visible\nWait timed out after 10079ms\n    at E:\\Work\\Stock Monitor\\Stock-monitor\\node_modules\\selenium-webdriver\\lib\\webdriver.js:929:22\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)",
+                "diff": null
+              },
+              "uuid": "0e2889e0-a26f-4826-958e-2a4573d23693",
+              "parentUUID": "ef075136-5503-4be8-b23f-4edc4ed451fc",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "Should open Expense Dashboard",
+              "fullTitle": "Stock Monitor - Full E2E Flow Should open Expense Dashboard",
+              "timedOut": false,
+              "duration": 10635,
+              "state": "failed",
+              "speed": null,
+              "pass": false,
+              "fail": true,
+              "pending": false,
+              "context": null,
+              "code": "await mockLogin();\nawait clickWhenReady(\n  By.xpath(\"//*[contains(text(),'Expense')]\")\n);\nawait driver.wait(until.urlContains(\"expense\"), 5000);\nconst url = await driver.getCurrentUrl();\nassert(url.includes(\"expense\"));",
+              "err": {
+                "message": "TimeoutError: Waiting for element to be located By(xpath, //*[contains(text(),'Expense')])\nWait timed out after 10202ms",
+                "estack": "TimeoutError: Waiting for element to be located By(xpath, //*[contains(text(),'Expense')])\nWait timed out after 10202ms\n    at E:\\Work\\Stock Monitor\\Stock-monitor\\node_modules\\selenium-webdriver\\lib\\webdriver.js:929:22\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)",
+                "diff": null
+              },
+              "uuid": "fde46409-d96f-4d10-8595-f6b0ea31561b",
+              "parentUUID": "ef075136-5503-4be8-b23f-4edc4ed451fc",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "Should display investment dashboard elements",
+              "fullTitle": "Stock Monitor - Full E2E Flow Should display investment dashboard elements",
+              "timedOut": false,
+              "duration": 447,
+              "state": "passed",
+              "speed": "slow",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "await mockLogin();\nawait driver.get(`${BASE_URL}/dashboard`);\n// Example UI checks (adjust selectors based on your UI)\nconst body = await driver.getPageSource();\nassert(body.length > 0);\n// Optional: check for specific elements\n// Example:\n// await waitForElement(By.xpath(\"//*[contains(text(),'Total Value')]\"));",
+              "err": {},
+              "uuid": "88489a96-bc4b-4e57-b54a-f6e3bf7dc1c0",
+              "parentUUID": "ef075136-5503-4be8-b23f-4edc4ed451fc",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "Should display expense dashboard elements",
+              "fullTitle": "Stock Monitor - Full E2E Flow Should display expense dashboard elements",
+              "timedOut": false,
+              "duration": 489,
+              "state": "passed",
+              "speed": "slow",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "await mockLogin();\nawait driver.get(`${BASE_URL}/expense`);\nconst body = await driver.getPageSource();\nassert(body.length > 0);",
+              "err": {},
+              "uuid": "9d8b178e-7e5a-4ca2-8c14-fa751c327b83",
+              "parentUUID": "ef075136-5503-4be8-b23f-4edc4ed451fc",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "Should add stock to portfolio",
+              "fullTitle": "Stock Monitor - Full E2E Flow Should add stock to portfolio",
+              "timedOut": false,
+              "duration": 10655,
+              "state": "failed",
+              "speed": null,
+              "pass": false,
+              "fail": true,
+              "pending": false,
+              "context": null,
+              "code": "await mockLogin();\nawait driver.get(`${BASE_URL}/dashboard`);\n// Adjust selectors based on your UI\nawait clickWhenReady(By.xpath(\"//button[contains(text(),'Add')]\"));\nawait waitForElement(By.name(\"symbol\")).sendKeys(\"AAPL\");\nawait waitForElement(By.name(\"quantity\")).sendKeys(\"10\");\nawait waitForElement(By.name(\"buyPrice\")).sendKeys(\"150\");\nawait clickWhenReady(By.xpath(\"//button[contains(text(),'Submit')]\"));\n// Verify stock appears\nconst page = await driver.getPageSource();\nassert(page.includes(\"AAPL\"));",
+              "err": {
+                "message": "TimeoutError: Waiting for element to be located By(xpath, //button[contains(text(),'Add')])\nWait timed out after 10187ms",
+                "estack": "TimeoutError: Waiting for element to be located By(xpath, //button[contains(text(),'Add')])\nWait timed out after 10187ms\n    at E:\\Work\\Stock Monitor\\Stock-monitor\\node_modules\\selenium-webdriver\\lib\\webdriver.js:929:22\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)",
+                "diff": null
+              },
+              "uuid": "8256f3ef-d23d-4df2-a9eb-5f44fd5e69fc",
+              "parentUUID": "ef075136-5503-4be8-b23f-4edc4ed451fc",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "Should remove stock from portfolio",
+              "fullTitle": "Stock Monitor - Full E2E Flow Should remove stock from portfolio",
+              "timedOut": false,
+              "duration": 10554,
+              "state": "failed",
+              "speed": null,
+              "pass": false,
+              "fail": true,
+              "pending": false,
+              "context": null,
+              "code": "await mockLogin();\nawait driver.get(`${BASE_URL}/dashboard`);\n// Adjust selector\nawait clickWhenReady(\n  By.xpath(\"//button[contains(text(),'Delete')]\")\n);\n// Optional validation\nconst page = await driver.getPageSource();\nassert(!page.includes(\"AAPL\"));",
+              "err": {
+                "message": "TimeoutError: Waiting for element to be located By(xpath, //button[contains(text(),'Delete')])\nWait timed out after 10099ms",
+                "estack": "TimeoutError: Waiting for element to be located By(xpath, //button[contains(text(),'Delete')])\nWait timed out after 10099ms\n    at E:\\Work\\Stock Monitor\\Stock-monitor\\node_modules\\selenium-webdriver\\lib\\webdriver.js:929:22\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)",
+                "diff": null
+              },
+              "uuid": "a958c2f8-fe33-416f-930a-b2e2887c2b5f",
+              "parentUUID": "ef075136-5503-4be8-b23f-4edc4ed451fc",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "Should handle API failure gracefully",
+              "fullTitle": "Stock Monitor - Full E2E Flow Should handle API failure gracefully",
+              "timedOut": false,
+              "duration": 492,
+              "state": "passed",
+              "speed": "slow",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "await mockLogin();\nawait driver.get(`${BASE_URL}/dashboard`);\n// Simulate failure via devtools (optional advanced)\nconst page = await driver.getPageSource();\n// Check fallback UI\nassert(\n  page.toLowerCase().includes(\"error\") ||\n  page.toLowerCase().includes(\"retry\") ||\n  page.length > 0\n);",
+              "err": {},
+              "uuid": "2b959cc4-9af2-431c-9379-af899a2750d0",
+              "parentUUID": "ef075136-5503-4be8-b23f-4edc4ed451fc",
+              "isHook": false,
+              "skipped": false
+            }
+          ],
+          "suites": [],
+          "passes": [
+            "824080e7-ba4a-4a79-acb8-943cabea9f11",
+            "d5557f74-a44c-4ccd-aeba-28891afd2f3f",
+            "b54a765d-2c4f-463a-acee-dbebcbd2c8c1",
+            "88489a96-bc4b-4e57-b54a-f6e3bf7dc1c0",
+            "9d8b178e-7e5a-4ca2-8c14-fa751c327b83",
+            "2b959cc4-9af2-431c-9379-af899a2750d0"
+          ],
+          "failures": [
+            "0e2889e0-a26f-4826-958e-2a4573d23693",
+            "fde46409-d96f-4d10-8595-f6b0ea31561b",
+            "8256f3ef-d23d-4df2-a9eb-5f44fd5e69fc",
+            "a958c2f8-fe33-416f-930a-b2e2887c2b5f"
+          ],
+          "pending": [],
+          "skipped": [],
+          "duration": 45156,
+          "root": false,
+          "rootEmpty": false,
+          "_timeout": 60000
+        }
+      ],
+      "passes": [],
+      "failures": [],
+      "pending": [],
+      "skipped": [],
+      "duration": 0,
+      "root": true,
+      "rootEmpty": true,
+      "_timeout": 2000
+    }
+  ],
+  "meta": {
+    "mocha": {
+      "version": "11.7.5"
+    },
+    "mochawesome": {
+      "options": {
+        "quiet": false,
+        "reportFilename": "mochawesome",
+        "saveHtml": true,
+        "saveJson": true,
+        "consoleReporter": "spec",
+        "useInlineDiffs": false,
+        "code": true
+      },
+      "version": "7.1.4"
+    },
+    "marge": {
+      "options": null,
+      "version": "6.3.2"
+    }
+  }
+}

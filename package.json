@@ -1,5 +1,28 @@
 {
   "dependencies": {
-    "firebase": "^12.9.0"
-  }
+    "chromedriver": "^146.0.6",
+    "firebase": "^12.9.0",
+    "mocha": "^11.7.5",
+    "mochawesome": "^7.1.4",
+    "selenium-webdriver": "^4.41.0"
+  },
+  "name": "stock-monitor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yuvicodes1/FinTrack.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Yuvicodes1/FinTrack/issues"
+  },
+  "homepage": "https://github.com/Yuvicodes1/FinTrack#readme"
 }
