@@ -3,13 +3,17 @@ const asyncHandler = require("../middleware/asyncHandler");
 const { getFromCache, setCache, TTL } = require("../utils/cache");
 const { getAllRates } = require("../services/currencyService");
 
-const API_KEY = process.env.FINNHUB_API_KEY;
-
+const YAHOO_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'application/json, text/plain, */*',
+  'Accept-Language': 'en-US,en;q=0.9',
+};
 
 // ======================================================
 // 🔎 SEARCH STOCK (Finnhub)
 // ======================================================
 exports.searchStock = asyncHandler(async (req, res) => {
+  const API_KEY = process.env.FINNHUB_API_KEY;
   const { symbol } = req.query;
 
   if (!symbol) {
@@ -54,7 +58,10 @@ exports.getHistoricalData = asyncHandler(async (req, res) => {
   }
 
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=${yahooRange}&interval=1d`;
-  const response = await axios.get(url);
+  const response = await axios.get(url, {
+    headers: YAHOO_HEADERS,
+    timeout: 10000,
+  });
 
   if (!response.data.chart || !response.data.chart.result) {
     return res.status(200).json({ success: true, data: [] });
@@ -79,9 +86,9 @@ exports.getHistoricalData = asyncHandler(async (req, res) => {
 // 📊 GET TOP STOCKS — cached as a single batch
 // ======================================================
 exports.getTopStocks = asyncHandler(async (req, res) => {
+  const API_KEY = process.env.FINNHUB_API_KEY;
   const CACHE_KEY = "top_stocks_batch";
 
-  // ── Return cached batch if still fresh ──────────────────────────────────
   const cached = getFromCache(CACHE_KEY);
   if (cached) {
     console.log("Top stocks cache hit");
@@ -152,10 +159,8 @@ exports.getTopStocks = asyncHandler(async (req, res) => {
     "SPY", "QQQ", "IWM", "DIA", "GLD",
   ];
 
-  // ── Batch requests to avoid Finnhub rate limits (30 req/s free tier) ─────
   const BATCH_SIZE = 25;
-  const BATCH_DELAY_MS = 1200; // 1.2s between batches stays well under limit
-
+  const BATCH_DELAY_MS = 1200;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   let results = [];
@@ -168,7 +173,6 @@ exports.getTopStocks = asyncHandler(async (req, res) => {
             params: { symbol, token: API_KEY },
           })
           .then((response) => {
-            // Skip symbols with no data (price = 0 means Finnhub doesn't carry it)
             if (!response.data.c) return null;
             return {
               symbol,
@@ -188,7 +192,6 @@ exports.getTopStocks = asyncHandler(async (req, res) => {
     if (i + BATCH_SIZE < symbols.length) await sleep(BATCH_DELAY_MS);
   }
 
-  // ── Cache the full batch result ──────────────────────────────────────────
   setCache(CACHE_KEY, results, TTL.TOP_STOCKS);
   console.log(`Top stocks fetched and cached: ${results.length}/${symbols.length} symbols`);
 
